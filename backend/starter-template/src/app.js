@@ -4,6 +4,9 @@ import cookieParser from "cookie-parser"
 import hospitalRoutes from "./routes/Hospital.route.js"
 
 import userRoutes from "./routes/Auth.route.js";
+import inventoryRoutes from "./routes/inventory.routes.js";
+import swaggerUi from "swagger-ui-express";
+import { swaggerSpec } from "./swagger.js";
 const app = express()
 
 app.use(cors({
@@ -18,12 +21,15 @@ app.use(cookieParser())
 
 
 //routes declaration
-import hospitalRoutes from './routes/Hospital.route.js';
 import patientRoutes from './routes/Patient.route.js';
 
 app.use('/api/hospitals', hospitalRoutes);
 app.use('/api/patients', patientRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/inventories", inventoryRoutes);
+
+// Swagger docs
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 
 // Health check route

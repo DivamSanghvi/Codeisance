@@ -298,9 +298,90 @@ Success responses:
 - Async/await with proper error handling
 - Environment-based configuration
 
+## Inventory Module (Hackathon)
+
+All routes are namespaced under `/api/inventories`. Bodies are JSON. Responses: `{ success: true|false, data|error }`.
+
+### Create Inventory
+
+```bash
+curl -X POST http://localhost:8000/api/inventories \
+  -H 'Content-Type: application/json' \
+  -d '{"hospitalId":"<HOSPITAL_ID>"}'
+```
+
+### Get Inventory
+
+```bash
+curl http://localhost:8000/api/inventories/<INVENTORY_ID>
+```
+
+### Add Items (single/bulk)
+
+```bash
+curl -X POST http://localhost:8000/api/inventories/<INVENTORY_ID>/items \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "items": [
+      { "type":"BLOOD","bloodType":"O+","quantity":4,"expiresAt":"2025-10-10T00:00:00Z" },
+      { "type":"ORGAN","organType":"Kidney","quantity":1,"expiresAt":"2025-09-30T00:00:00Z" }
+    ]
+  }'
+```
+
+### Use an Item
+
+```bash
+curl -X POST http://localhost:8000/api/inventories/<INVENTORY_ID>/items/<ITEM_ID>/use \
+  -H 'Content-Type: application/json' \
+  -d '{"quantity":2, "patientId":"<PATIENT_ID>"}'
+```
+
+### Discard an Item
+
+```bash
+curl -X POST http://localhost:8000/api/inventories/<INVENTORY_ID>/items/<ITEM_ID>/discard \
+  -H 'Content-Type: application/json' \
+  -d '{"reason":"EXPIRED"}'
+```
+
+### Get Stock Summary
+
+```bash
+curl http://localhost:8000/api/inventories/<INVENTORY_ID>/stock
+```
+
+Returns:
+
+```json
+{
+  "success": true,
+  "data": {
+    "stockStatus": [
+      { "type": "BLOOD", "bloodType": "O+", "availableQuantity": 2 },
+      { "type": "ORGAN", "organType": "Kidney", "availableQuantity": 1 }
+    ]
+  }
+}
+```
+
+### Env thresholds/webhooks
+
+```
+SHORTAGE_THRESHOLD_DEFAULT_BLOOD=3
+SHORTAGE_THRESHOLD_BLOOD_JSON={"O+":5,"O-":4,"A+":4}
+SHORTAGE_THRESHOLD_ORGAN=1
+FUTURE_SHORTAGE_DAYS=3
+FUTURE_SHORTAGE_LOOKBACK_DAYS=7
+WEBHOOK_URL_SHORTAGE=
+WEBHOOK_URL_FUTURE_SHORTAGE=
+WEBHOOK_URL_EXPIRED=
+```
+
+If webhook URLs are not set, events are logged to console.
+
 ## Future Enhancements
 
-- Inventory management for blood units
 - Real SMS/Push notifications
 - Advanced scheduling algorithms
 - Donor reward systems

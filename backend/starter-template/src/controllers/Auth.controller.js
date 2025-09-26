@@ -1,6 +1,28 @@
 import axios from "axios";
 import User from "../models/User.js";
 
+// Helper to geocode a single pincode via OSM
+async function geocodePincodeToPoint(pincode) {
+  const osmResponse = await axios.get("https://nominatim.openstreetmap.org/search", {
+    params: {
+      postalcode: pincode,
+      country: "India",
+      format: "json",
+      limit: 1
+    },
+    headers: { "User-Agent": "CommunityDonationApp/1.0" }
+  });
+
+  if (!osmResponse.data || osmResponse.data.length === 0) {
+    throw new Error("Invalid pincode");
+  }
+  const { lat, lon } = osmResponse.data[0];
+  return {
+    type: "Point",
+    coordinates: [parseFloat(lon), parseFloat(lat)]
+  };
+}
+
 // Controller for phone-call registration
 export const registerPhoneUser = async (req, res) => {
   try {
@@ -53,6 +75,66 @@ export const registerPhoneUser = async (req, res) => {
         type: "Point",
         coordinates: [parseFloat(lon), parseFloat(lat)]
       },
+      isVerifiedDonor: false,
+      availabilityStatus: "unavailable"
+    });
+
+    await newUser.save();
+
+    res.status(201).json({ message: "User registered successfully", userId: newUser._id });
+  } catch (error) {
+    console.error(error);
+    if (error.code === 11000) {
+      // Duplicate key error
+      return res.status(400).json({ message: "Phone number or email already exists" });
+    }
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+// Controller for website/app registration
+export const registerWebUser = async (req, res) => {
+  try {
+    const {
+      name,
+      phone,
+      email,
+      password,
+      age,
+      gender,
+      bloodType,
+      organDonation,
+      anomalies,
+      pincode
+    } = req.body;
+
+    // Check mandatory fields
+    if (!name || !phone || !email || !password || !age || !gender || !bloodType || !pincode) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    // Geocode
+    let location;
+    try {
+      location = await geocodePincodeToPoint(pincode);
+    } catch (e) {
+      return res.status(400).json({ message: "Invalid pincode" });
+    }
+
+    // Create new user
+    const newUser = new User({
+      name,
+      phone,
+      email,
+      password, // ideally hash before saving
+      age,
+      gender,
+      bloodType,
+      organDonation,
+      anomalies,
+      pincode,
+      location,
       isVerifiedDonor: false,
       availabilityStatus: "unavailable"
     });
