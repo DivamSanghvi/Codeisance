@@ -1,5 +1,5 @@
 // Blood type compatibility map: donor can give to patient
-const compatibilityMap = {
+export const compatibilityMap = {
   'O-': ['O-', 'O+', 'A-', 'A+', 'B-', 'B+', 'AB-', 'AB+'],
   'O+': ['O+', 'A+', 'B+', 'AB+'],
   'A-': ['A-', 'A+', 'AB-', 'AB+'],
