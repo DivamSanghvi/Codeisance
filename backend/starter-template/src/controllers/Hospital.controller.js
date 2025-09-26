@@ -1,18 +1,6 @@
 import Hospital from '../models/Hospital.js';
 
-// Create hospital
-export const createHospital = async (req, res, next) => {
-  try {
-    const hospital = new Hospital(req.body);
-    await hospital.save();
-    res.status(201).json({
-      success: true,
-      data: hospital
-    });
-  } catch (error) {
-    next(error);
-  }
-};
+
 
 // Get hospitals with pagination, search, geo
 export const getHospitals = async (req, res, next) => {

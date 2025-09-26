@@ -6,11 +6,25 @@ import hospitalRoutes from "./routes/Hospital.route.js"
 
 import userRoutes from "./routes/Auth.route.js";
 import swaggerUi from 'swagger-ui-express';
+import inventoryRoutes from "./routes/inventory.routes.js";
+import { swaggerSpec } from "./swagger.js";
 
 const swaggerDocument = JSON.parse(fs.readFileSync(new URL('../swagger.json', import.meta.url), 'utf8'));
 
-import inventoryRoutes from "./routes/inventory.routes.js";
-import { swaggerSpec } from "./swagger.js";
+function mergeSwagger(baseDoc, extraSpec) {
+  const merged = { ...baseDoc };
+  merged.openapi = merged.openapi || extraSpec.openapi || '3.0.0';
+  merged.info = merged.info || extraSpec.info;
+  merged.paths = { ...(baseDoc.paths || {}), ...(extraSpec.paths || {}) };
+  merged.components = {
+    ...(baseDoc.components || {}),
+    schemas: { ...((baseDoc.components || {}).schemas || {}), ...((extraSpec.components || {}).schemas || {}) },
+    securitySchemes: { ...((baseDoc.components || {}).securitySchemes || {}), ...((extraSpec.components || {}).securitySchemes || {}) },
+  };
+  return merged;
+}
+
+const combinedSwaggerSpec = mergeSwagger(swaggerDocument, swaggerSpec);
 const app = express()
 
 app.use(cors({
@@ -32,11 +46,8 @@ app.use('/api/patients', patientRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/inventories", inventoryRoutes);
 
-// Swagger docs
-app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-
-// Swagger UI setup
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+// Swagger docs (merged: existing swagger.json + inventory spec)
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(combinedSwaggerSpec));
 
 // Health check route
 app.get("/", (req, res) => {
