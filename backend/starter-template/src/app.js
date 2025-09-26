@@ -1,6 +1,7 @@
 import express from "express"
 import cors from "cors"
 import cookieParser from "cookie-parser"
+import hospitalRoutes from "./routes/Hospital.route.js"
 
 const app = express()
 
@@ -16,8 +17,17 @@ app.use(cookieParser())
 
 
 //routes declaration
-
+app.use('/api/hospitals', hospitalRoutes)
 
 // http://localhost:8000/api/v1/users/register
+
+// Global error handler
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).json({
+        success: false,
+        message: err.message || 'Internal Server Error'
+    });
+});
 
 export { app }
