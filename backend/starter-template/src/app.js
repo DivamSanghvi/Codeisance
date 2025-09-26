@@ -3,6 +3,7 @@ import cors from "cors"
 import cookieParser from "cookie-parser"
 import hospitalRoutes from "./routes/Hospital.route.js"
 
+import userRoutes from "./routes/Auth.route.js";
 const app = express()
 
 app.use(cors({
@@ -18,6 +19,13 @@ app.use(cookieParser())
 
 //routes declaration
 app.use('/api/hospitals', hospitalRoutes)
+app.use("/api/users", userRoutes);
+
+
+// Health check route
+app.get("/", (req, res) => {
+  res.send("Community Blood & Organ Donation API is running ✅");
+});
 
 // http://localhost:8000/api/v1/users/register
 
