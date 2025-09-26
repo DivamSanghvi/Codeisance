@@ -29,7 +29,15 @@ const userSchema = new mongoose.Schema({
   },
 
   isVerifiedDonor: { type: Boolean, default: false },
-  availabilityStatus: { type: String, enum: ["available", "unavailable"], default: "unavailable" }
+  availabilityStatus: { type: String, enum: ["available", "unavailable"], default: "unavailable" },
+  lastDonationAt: {
+    type: Date,
+    default: null
+  },
+  lastPingedAt: {
+    type: Date,
+    default: null
+  }
 }, { timestamps: true });
 
 // Ensure at least password or pin exists

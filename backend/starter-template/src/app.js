@@ -18,7 +18,11 @@ app.use(cookieParser())
 
 
 //routes declaration
-app.use('/api/hospitals', hospitalRoutes)
+import hospitalRoutes from './routes/Hospital.route.js';
+import patientRoutes from './routes/Patient.route.js';
+
+app.use('/api/hospitals', hospitalRoutes);
+app.use('/api/patients', patientRoutes);
 app.use("/api/users", userRoutes);
 
 
