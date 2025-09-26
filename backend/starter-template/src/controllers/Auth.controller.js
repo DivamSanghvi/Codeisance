@@ -2,6 +2,7 @@ import axios from "axios";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 import Hospital from "../models/Hospital.js";
+import Inventory from "../models/Inventory.js";
 
 // Helper to geocode a single pincode via OSM
 async function geocodePincodeToPoint(pincode) {
@@ -310,10 +311,10 @@ export const loginPhoneUser = async (req, res) => {
 // Hospital registration (similar to user, with lat/long stored)
 export const registerHospital = async (req, res) => {
   try {
-    const { name, licenseNo, address = {}, contact = {}, type, services } = req.body;
+    const { name, licenseNo, password, address = {}, contact = {}, type, services } = req.body;
     const { line1, line2, city, state, pincode, country } = address;
 
-    if (!name || !licenseNo || !line1 || !city || !state || !pincode || !country) {
+    if (!name || !licenseNo || !password || !line1 || !city || !state || !pincode || !country) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
@@ -329,6 +330,7 @@ export const registerHospital = async (req, res) => {
       name,
       type: type || undefined,
       licenseNo,
+      password,
       contact: {
         phone: contact.phone,
         email: contact.email
@@ -347,6 +349,14 @@ export const registerHospital = async (req, res) => {
 
     await hospital.save();
 
+    // Create empty inventory for this hospital by default
+    const inventory = new Inventory({ hospital: hospital._id, items: [], dailyUsage: [], stockStatus: [] });
+    await inventory.save();
+
+    // Link back to hospital and save
+    hospital.inventory = inventory._id;
+    await hospital.save();
+
     const token = signBasicToken({
       kind: "hospital",
       hospitalId: hospital._id,
@@ -356,7 +366,7 @@ export const registerHospital = async (req, res) => {
       address: { city: hospital.address.city, state: hospital.address.state },
     });
 
-    return res.status(201).json({ message: "Hospital registered successfully", hospitalId: hospital._id, token });
+    return res.status(201).json({ message: "Hospital registered successfully", hospitalId: hospital._id, inventoryId: inventory._id, token });
   } catch (error) {
     console.error(error);
     if (error.code === 11000) {
@@ -369,12 +379,12 @@ export const registerHospital = async (req, res) => {
 // Hospital login (simple: by licenseNo)
 export const loginHospital = async (req, res) => {
   try {
-    const { licenseNo } = req.body;
-    if (!licenseNo) {
-      return res.status(400).json({ message: "licenseNo is required" });
+    const { licenseNo, password } = req.body;
+    if (!licenseNo || !password) {
+      return res.status(400).json({ message: "licenseNo and password are required" });
     }
     const hospital = await Hospital.findOne({ licenseNo });
-    if (!hospital) {
+    if (!hospital || hospital.password !== password) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
     const token = signBasicToken({

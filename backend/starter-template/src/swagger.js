@@ -32,24 +32,7 @@ const swaggerDefinition = {
     },
   },
   paths: {
-    "/api/inventories": {
-      post: {
-        summary: "Create inventory for a hospital",
-        requestBody: {
-          required: true,
-          content: {
-            "application/json": {
-              schema: {
-                type: "object",
-                properties: { hospitalId: { type: "string" } },
-                required: ["hospitalId"],
-              },
-            },
-          },
-        },
-        responses: { "201": { description: "Created" }, "400": { description: "Validation error" }, "404": { description: "Not found" } },
-      },
-    },
+    
     "/api/inventories/{inventoryId}": {
       get: {
         summary: "Get inventory by id",

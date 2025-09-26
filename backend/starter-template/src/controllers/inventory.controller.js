@@ -1,5 +1,4 @@
 import {
-  createInventory,
   getInventory,
   deleteInventory,
   addItems,
@@ -15,16 +14,6 @@ function ok(res, data, status = 200) {
 function fail(res, err) {
   const status = err.status || 500;
   res.status(status).json({ success: false, error: err.message || "Internal Error" });
-}
-
-export async function createInventoryHandler(req, res) {
-  try {
-    const { hospitalId } = req.body || {};
-    const inv = await createInventory(hospitalId);
-    ok(res, inv, 201);
-  } catch (e) {
-    fail(res, e);
-  }
 }
 
 export async function getInventoryHandler(req, res) {

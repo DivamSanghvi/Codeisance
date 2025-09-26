@@ -1,6 +1,5 @@
 import { Router } from "express";
 import {
-  createInventoryHandler,
   getInventoryHandler,
   deleteInventoryHandler,
   addItemsHandler,
@@ -12,7 +11,6 @@ import {
 const router = Router();
 
 // CRUD
-router.post("/", createInventoryHandler);
 router.get("/:inventoryId", getInventoryHandler);
 router.delete("/:inventoryId", deleteInventoryHandler);
 

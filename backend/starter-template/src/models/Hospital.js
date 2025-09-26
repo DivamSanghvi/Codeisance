@@ -15,6 +15,11 @@ const hospitalSchema = new mongoose.Schema(
       default: "HOSPITAL",
       uppercase: true,
     },
+    // Simple auth field for demo login
+    password: {
+      type: String,
+      trim: true
+    },
     licenseNo: {
       type: String,
       required: [true, "License number is required"],
