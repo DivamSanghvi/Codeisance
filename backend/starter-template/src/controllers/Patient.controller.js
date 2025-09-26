@@ -3,7 +3,7 @@ import Patient from '../models/Patient.js';
 import User from '../models/User.js';
 import Match from '../models/Match.js';
 import Appointment from '../models/Appointment.js';
-import { isCompatible } from '../utils/bloodCompatibility.js';
+import { isCompatible, compatibilityMap } from '../utils/bloodCompatibility.js';
 
 // Create patient and initiate matching
 export const createPatient = async (req, res, next) => {
@@ -64,15 +64,20 @@ const findAndProposeDonors = async (patient, targetUnits) => {
       },
       {
         $match: {
-          bloodType: { $in: Object.keys(require('../utils/bloodCompatibility.js').compatibilityMap).filter(dt => isCompatible(dt, patient.bloodType)) },
-          isVerifiedDonor: true,
-          $or: [
-            { lastDonationAt: { $lte: ninetyDaysAgo } },
-            { lastDonationAt: null }
-          ],
-          $or: [
-            { lastPingedAt: { $lte: fourteenDaysAgo } },
-            { lastPingedAt: null }
+          bloodType: { $in: Object.keys(compatibilityMap).filter(dt => isCompatible(dt, patient.bloodType)) },
+          $and: [
+            {
+              $or: [
+                { lastDonationAt: { $lte: ninetyDaysAgo } },
+                { lastDonationAt: null }
+              ]
+            },
+            {
+              $or: [
+                { lastPingedAt: { $lte: fourteenDaysAgo } },
+                { lastPingedAt: null }
+              ]
+            }
           ]
         }
       },
@@ -93,7 +98,13 @@ const findAndProposeDonors = async (patient, targetUnits) => {
       }
     ];
 
+    console.log('Pipeline:', JSON.stringify(pipeline, null, 2));
+    console.log('Hospital location:', hospital.location.coordinates);
+    console.log('Patient blood type:', patient.bloodType);
+    console.log('Compatible blood types:', Object.keys(compatibilityMap).filter(dt => isCompatible(dt, patient.bloodType)));
+
     const donors = await User.aggregate(pipeline);
+    console.log('Found donors:', donors.length);
 
     // Create proposals
     for (const donor of donors.slice(0, targetUnits)) {
@@ -215,15 +226,20 @@ export const recheckPendingPatients = async () => {
           {
             $match: {
               _id: { $nin: proposedDonorIds },
-              bloodType: { $in: Object.keys(require('../utils/bloodCompatibility.js').compatibilityMap).filter(dt => isCompatible(dt, patient.bloodType)) },
-              isVerifiedDonor: true,
-              $or: [
-                { lastDonationAt: { $lte: ninetyDaysAgo } },
-                { lastDonationAt: null }
-              ],
-              $or: [
-                { lastPingedAt: { $lte: fourteenDaysAgo } },
-                { lastPingedAt: null }
+              bloodType: { $in: Object.keys(compatibilityMap).filter(dt => isCompatible(dt, patient.bloodType)) },
+              $and: [
+                {
+                  $or: [
+                    { lastDonationAt: { $lte: ninetyDaysAgo } },
+                    { lastDonationAt: null }
+                  ]
+                },
+                {
+                  $or: [
+                    { lastPingedAt: { $lte: fourteenDaysAgo } },
+                    { lastPingedAt: null }
+                  ]
+                }
               ]
             }
           },

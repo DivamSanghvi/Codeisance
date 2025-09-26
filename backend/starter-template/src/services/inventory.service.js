@@ -145,7 +145,6 @@ export async function addItems(inventoryId, items) {
       organType: item.type === "ORGAN" ? item.organType : undefined,
       quantity: Number(item.quantity),
       donatedBy: item.donatedBy,
-      patient: item.patient,
       receivedAt: item.receivedAt ? new Date(item.receivedAt) : new Date(),
       expiresAt: new Date(item.expiresAt),
       status: "AVAILABLE",
@@ -242,37 +241,54 @@ export async function checkCurrentShortages(inventory) {
   const bloodThresholds = getBloodThresholds();
   const organThreshold = getOrganThreshold();
   const alerts = [];
+
+  // Build availability maps from stockStatus
+  const bloodAvail = new Map();
+  const organAvail = new Map();
   for (const status of inventory.stockStatus || []) {
     if (status.type === "BLOOD") {
-      const threshold = Number(bloodThresholds[status.bloodType] ?? 3);
-      if (Number(status.availableQuantity || 0) < threshold) {
-        const payload = {
-          hospital: String(inventory.hospital),
-          type: "BLOOD",
-          bloodType: status.bloodType,
-          available: Number(status.availableQuantity || 0),
-          threshold,
-        };
-        console.log(`[SHORTAGE] hospital=${payload.hospital} type=BLOOD bloodType=${payload.bloodType} available=${payload.available} threshold=${payload.threshold}`);
-        alerts.push(payload);
-        await emitWebhook(WEBHOOK_URL_SHORTAGE, "SHORTAGE", payload);
-      }
+      bloodAvail.set(status.bloodType, Number(status.availableQuantity || 0));
     } else if (status.type === "ORGAN") {
-      const threshold = Number(organThreshold);
-      if (Number(status.availableQuantity || 0) < threshold) {
-        const payload = {
-          hospital: String(inventory.hospital),
-          type: "ORGAN",
-          organType: status.organType,
-          available: Number(status.availableQuantity || 0),
-          threshold,
-        };
-        console.log(`[SHORTAGE] hospital=${payload.hospital} type=ORGAN organType=${payload.organType} available=${payload.available} threshold=${payload.threshold}`);
-        alerts.push(payload);
-        await emitWebhook(WEBHOOK_URL_SHORTAGE, "SHORTAGE", payload);
-      }
+      organAvail.set(status.organType, Number(status.availableQuantity || 0));
     }
   }
+
+  // Evaluate BLOOD shortages for all types (missing => 0)
+  for (const bt of BLOOD_TYPES) {
+    const available = Number(bloodAvail.get(bt) || 0);
+    const threshold = Number(bloodThresholds[bt] ?? 3);
+    if (available < threshold) {
+      const payload = {
+        hospital: String(inventory.hospital),
+        type: "BLOOD",
+        bloodType: bt,
+        available,
+        threshold,
+      };
+      console.log(`[SHORTAGE] hospital=${payload.hospital} type=BLOOD bloodType=${payload.bloodType} available=${payload.available} threshold=${payload.threshold}`);
+      alerts.push(payload);
+      await emitWebhook(WEBHOOK_URL_SHORTAGE, "SHORTAGE", payload);
+    }
+  }
+
+  // Evaluate ORGAN shortages for all types (missing => 0)
+  for (const ot of ORGAN_TYPES) {
+    const available = Number(organAvail.get(ot) || 0);
+    const threshold = Number(organThreshold);
+    if (available < threshold) {
+      const payload = {
+        hospital: String(inventory.hospital),
+        type: "ORGAN",
+        organType: ot,
+        available,
+        threshold,
+      };
+      console.log(`[SHORTAGE] hospital=${payload.hospital} type=ORGAN organType=${payload.organType} available=${payload.available} threshold=${payload.threshold}`);
+      alerts.push(payload);
+      await emitWebhook(WEBHOOK_URL_SHORTAGE, "SHORTAGE", payload);
+    }
+  }
+
   return alerts;
 }
 

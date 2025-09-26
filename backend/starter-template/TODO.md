@@ -1,13 +1,9 @@
-# Patient Matching Service Implementation TODO
+# Hospital CRUD Service Implementation TODO
 
 ## Steps to Complete
-- [x] Create Patient model with requirements.
-- [x] Update User model with donor fields.
-- [x] Create Match model with TTL.
-- [x] Create Appointment model.
-- [x] Create blood compatibility utils.
-- [x] Create Patient controller with create, confirm, get, recheck.
-- [x] Create Patient routes.
-- [x] Mount routes in app.js.
-- [x] Add recheck interval in index.js.
-- [x] Generate cURL examples.
+- [x] Create src/models/Hospital.js: Define Mongoose schema with fields, indexes, pre-save normalization.
+- [x] Create src/middlewares/validate.js: Manual validation middleware for body/query params, return 400 errors.
+- [x] Create src/controllers/Hospital.controller.js: Implement CRUD handlers with async/await, error handling.
+- [x] Create src/routes/Hospital.route.js: Define Express router with validation and controller bindings.
+- [x] Edit src/app.js: Mount hospital routes and add global error handler.
+- [x] Generate cURL examples for API testing.
