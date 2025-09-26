@@ -90,6 +90,8 @@ export const registerPhoneUser = async (req, res) => {
 
     await newUser.save();
 
+    console.log(`User signed up: ${newUser.name}, phone: ${newUser.phone}`);
+
     const token = signBasicToken({
       kind: "user",
       userId: newUser._id,
@@ -160,6 +162,8 @@ export const registerWebUser = async (req, res) => {
     });
 
     await newUser.save();
+
+    console.log(`User signed up: ${newUser.name}, phone: ${newUser.phone}, email: ${newUser.email || 'none'}`);
 
     const token = signBasicToken({
       kind: "user",
@@ -233,12 +237,14 @@ export const registerWebUsersBulk = async (req, res) => {
       try {
         const insertResult = await User.insertMany(docsToInsert, { ordered: false });
         result.insertedCount = insertResult.length;
+        console.log(`Bulk user signup: ${result.insertedCount} users registered`);
       } catch (e) {
         // Duplicate key errors will throw a BulkWriteError; count successful inserts
         if (e.writeErrors && Array.isArray(e.writeErrors)) {
           const successful = e.result?.nInserted ?? 0;
           result.insertedCount = successful;
           errors.push(...e.writeErrors.map(we => ({ index: we.index, message: we.errmsg || "Write error" })));
+          console.log(`Bulk user signup: ${result.insertedCount} users registered, with errors`);
         } else {
           return res.status(500).json({ message: "Bulk insert failed", error: e.message });
         }
@@ -263,6 +269,8 @@ export const loginWebUser = async (req, res) => {
     if (!user || user.password !== password) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
+    console.log(`User logged in: ${user.name} via web (email: ${user.email})`);
+
     const token = signBasicToken({
       kind: "user",
       userId: user._id,
@@ -291,6 +299,8 @@ export const loginPhoneUser = async (req, res) => {
     if (!user || String(user.pin) !== String(pin)) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
+    console.log(`User logged in: ${user.name} via phone`);
+
     const token = signBasicToken({
       kind: "user",
       userId: user._id,
@@ -357,6 +367,8 @@ export const registerHospital = async (req, res) => {
     hospital.inventory = inventory._id;
     await hospital.save();
 
+    console.log(`Hospital signed up: ${hospital.name}, license: ${hospital.licenseNo}`);
+
     const token = signBasicToken({
       kind: "hospital",
       hospitalId: hospital._id,
@@ -387,6 +399,8 @@ export const loginHospital = async (req, res) => {
     if (!hospital || hospital.password !== password) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
+    console.log(`Hospital logged in: ${hospital.name}, license: ${hospital.licenseNo}`);
+
     const token = signBasicToken({
       kind: "hospital",
       hospitalId: hospital._id,

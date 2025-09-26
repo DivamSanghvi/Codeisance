@@ -28,7 +28,7 @@ const combinedSwaggerSpec = mergeSwagger(swaggerDocument, swaggerSpec);
 const app = express()
 
 app.use(cors({
-    origin: process.env.CORS_ORIGIN,
+    origin: ['http://localhost:5173', 'http://localhost:3000'],
     credentials: true
 }))
 

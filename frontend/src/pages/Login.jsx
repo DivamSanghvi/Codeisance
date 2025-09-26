@@ -1,15 +1,49 @@
 import React, { useState } from 'react'
 
+const API_BASE = 'http://localhost:8000'
+
 export default function Login() {
   const [tab, setTab] = useState('donor')
-  const [donorMethod, setDonorMethod] = useState('pin')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault()
+    setLoading(true)
+    setError('')
     const form = new FormData(e.currentTarget)
     const obj = Object.fromEntries(form.entries())
-    console.log('Login submit', tab, donorMethod, obj)
-    alert('Login form submitted (UI only).')
+
+    let endpoint, body
+    if (tab === 'donor') {
+      endpoint = '/api/users/login/web'
+      body = { email: obj.email, password: obj.password }
+    } else {
+      endpoint = '/api/users/hospital/login'
+      body = { licenseNo: obj.licenseNo, password: obj.password }
+    }
+
+    try {
+      const res = await fetch(`${API_BASE}${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(body)
+      })
+      const data = await res.json()
+      if (res.ok) {
+        localStorage.setItem('token', data.token)
+        alert(`${tab} login successful!`)
+        // Redirect to dashboard or home
+        window.location.href = '#/dashboard'
+      } else {
+        setError(data.message || 'Login failed')
+      }
+    } catch (err) {
+      setError('Network error')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -29,44 +63,20 @@ export default function Login() {
           <form className="card form-card" onSubmit={submit}>
             <div className="form-head">
               <h3>Donor Login</h3>
-              <div className="option-row">
-                <label className={`chip ${donorMethod==='pin'?'chip-active':''}`}>
-                  <input type="radio" name="method" value="pin" checked={donorMethod==='pin'} onChange={()=>setDonorMethod('pin')} />
-                  Phone + PIN
-                </label>
-                <label className={`chip ${donorMethod==='password'?'chip-active':''}`}>
-                  <input type="radio" name="method" value="password" checked={donorMethod==='password'} onChange={()=>setDonorMethod('password')} />
-                  Email/Phone + Password
-                </label>
+            </div>
+            {error && <p className="error">{error}</p>}
+            <div className="form-grid">
+              <div className="field">
+                <label htmlFor="email">Email</label>
+                <input id="email" name="email" type="email" placeholder="Enter email" required />
+              </div>
+              <div className="field">
+                <label htmlFor="password">Password</label>
+                <input id="password" name="password" type="password" placeholder="Enter password" required />
               </div>
             </div>
-
-            {donorMethod === 'pin' ? (
-              <div className="form-grid">
-                <div className="field">
-                  <label htmlFor="phone">Phone</label>
-                  <input id="phone" name="phone" type="tel" placeholder="Enter phone number" required />
-                </div>
-                <div className="field">
-                  <label htmlFor="pin">PIN</label>
-                  <input id="pin" name="pin" type="number" placeholder="4-6 digit PIN" min="1000" max="999999" required />
-                </div>
-              </div>
-            ) : (
-              <div className="form-grid">
-                <div className="field">
-                  <label htmlFor="identifier">Email or Phone</label>
-                  <input id="identifier" name="identifier" type="text" placeholder="Enter email or phone" required />
-                </div>
-                <div className="field">
-                  <label htmlFor="password">Password</label>
-                  <input id="password" name="password" type="password" placeholder="Enter password" required />
-                </div>
-              </div>
-            )}
-
             <div className="action-row">
-              <button className="btn btn-pill" type="submit">Login</button>
+              <button className="btn btn-pill" type="submit" disabled={loading}>{loading ? 'Logging in...' : 'Login'}</button>
               <a className="btn btn-text" href="#/signup">Create account</a>
             </div>
           </form>
@@ -76,20 +86,21 @@ export default function Login() {
           <form className="card form-card" onSubmit={submit}>
             <div className="form-head">
               <h3>Hospital Login</h3>
-              <p className="muted small">Use your registered license number and contact email</p>
+              <p className="muted small">Use your registered license number and password</p>
             </div>
+            {error && <p className="error">{error}</p>}
             <div className="form-grid">
               <div className="field">
                 <label htmlFor="licenseNo">License number</label>
                 <input id="licenseNo" name="licenseNo" type="text" placeholder="e.g. GJ/HH/12345" required />
               </div>
               <div className="field">
-                <label htmlFor="email">Contact email</label>
-                <input id="email" name="email" type="email" placeholder="name@hospital.org" required />
+                <label htmlFor="password">Password</label>
+                <input id="password" name="password" type="password" placeholder="Enter password" required />
               </div>
             </div>
             <div className="action-row">
-              <button className="btn btn-pill" type="submit">Login</button>
+              <button className="btn btn-pill" type="submit" disabled={loading}>{loading ? 'Logging in...' : 'Login'}</button>
               <a className="btn btn-text" href="#/signup">Create account</a>
             </div>
           </form>
