@@ -116,6 +116,69 @@ All routes prefixed with `/api/patients`
 | POST | `/` | Register patient and initiate donor matching |
 | GET | `/:hospitalId` | List patients for a hospital |
 | POST | `/confirm/:token` | Confirm donation proposal |
+### Dashboards & Operational APIs
+
+All routes are prefixed with `/api` and documented in Swagger at `/api/docs`.
+
+#### Dashboard 1 — Hospital: Inventory (Operational)
+
+- GET `/hospitals/:hospitalId/inventory/summary`
+  - Returns totals, by-type counts, expiring buckets (24h/3d/7d), and today's used/received.
+- GET `/hospitals/:hospitalId/inventory/blood-available`
+  - Map of bloodType to available units.
+- GET `/hospitals/:hospitalId/inventory/organs-available`
+  - Map of organType to available units.
+- GET `/hospitals/:hospitalId/inventory/expiring?days=7`
+  - Count and breakdown by type for items expiring within N days.
+- GET `/hospitals/:hospitalId/inventory/usage-series?from=YYYY-MM-DD&to=YYYY-MM-DD`
+  - Time series of items used per day.
+- POST `/hospitals/:hospitalId/inventory/items`
+  - Body (blood): `{ "type":"BLOOD","bloodType":"O-","quantity":3,"donatedBy":"<userId?>","expiresAt":"2025-10-20T00:00:00Z" }`
+  - Body (organ): `{ "type":"ORGAN","organType":"Cornea","quantity":1,"donatedBy":"<userId?>","expiresAt":"2025-10-20T00:00:00Z" }`
+- PATCH `/hospitals/:hospitalId/inventory/items/:itemObjectId`
+  - Body: `{ "status":"USED","quantityUsed":1 }`
+
+#### Dashboard 2 — Hospital: Live Insights & Matching
+
+- GET `/hospitals/:hospitalId/overview`
+  - Returns `{ pendingUnits, availableUnits, urgencyRatio, pendingMatches }`.
+- GET `/hospitals/:hospitalId/matches?status=PROPOSED&sort=-createdAt&page=1&limit=20`
+  - Returns paginated rows with embedded patient and donor summary.
+- GET `/hospitals/:hospitalId/donors-nearby?bloodType=O-&verifiedOnly=true&radiusKm=25`
+  - Geo search of available donors around hospital.
+- POST `/hospitals/:hospitalId/sos`
+  - Body: `{ "bloodType":"O-","urgency":"HIGH","radiusKm":25,"limit":5,"patientId":"<optional>" }`
+  - Creates `PROPOSED` matches with 24h TTL.
+- GET `/hospitals/:hospitalId/funnel?from=YYYY-MM-DD&to=YYYY-MM-DD`
+  - Aggregates `Match.status` and `Appointment.status` counts.
+
+#### Dashboard 3 — Donor
+
+- GET `/me/summary`
+  - Accepts `x-user-id` header for demo. Returns donor profile and totals.
+- PATCH `/me/availability`
+  - Body: `{ "availabilityStatus":"available" }`.
+- GET `/me/appointments/upcoming`
+  - Next `SCHEDULED` appointment with hospital name.
+- GET `/me/appointments/history?from=YYYY-MM-DD&to=YYYY-MM-DD`
+  - Past appointments for charts/badges.
+- GET `/me/nearby-requests?radiusKm=20`
+  - Nearby hospitals with shortages for donor's blood type.
+
+#### Minimal Writes for Demo Flows
+
+- PATCH `/matches/:matchId`
+  - Body: `{ "status":"CONFIRMED" }`
+- POST `/appointments`
+  - Body: `{ "matchId":"...","donorId":"...","hospitalId":"...","dateTime":"..." }`
+- PATCH `/appointments/:id`
+  - Body: `{ "status":"COMPLETED" }`
+
+### Try It in Swagger
+
+- Start the server, then open: `http://localhost:8000/api/docs`
+- All above endpoints are available with example payloads.
+
 
 ## Data Models
 

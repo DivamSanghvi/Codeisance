@@ -66,12 +66,15 @@ const inventorySchema = new mongoose.Schema(
     ],
 
     stockStatus: [
-      {
-        type: String, // BLOOD / ORGAN
-        bloodType: String,
-        organType: String,
-        availableQuantity: Number,
-      },
+      new mongoose.Schema(
+        {
+          type: { type: String }, // BLOOD / ORGAN
+          bloodType: { type: String },
+          organType: { type: String },
+          availableQuantity: { type: Number },
+        },
+        { _id: false }
+      ),
     ],
   },
   { timestamps: true }

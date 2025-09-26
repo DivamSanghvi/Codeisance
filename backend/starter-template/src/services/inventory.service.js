@@ -145,6 +145,7 @@ export async function addItems(inventoryId, items) {
       organType: item.type === "ORGAN" ? item.organType : undefined,
       quantity: Number(item.quantity),
       donatedBy: item.donatedBy,
+      patient: item.patient && mongoose.Types.ObjectId.isValid(item.patient) ? item.patient : undefined,
       receivedAt: item.receivedAt ? new Date(item.receivedAt) : new Date(),
       expiresAt: new Date(item.expiresAt),
       status: "AVAILABLE",

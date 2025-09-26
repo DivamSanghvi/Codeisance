@@ -7,6 +7,7 @@ import hospitalRoutes from "./routes/Hospital.route.js"
 import userRoutes from "./routes/Auth.route.js";
 import swaggerUi from 'swagger-ui-express';
 import inventoryRoutes from "./routes/inventory.routes.js";
+import dashboardRoutes from "./routes/Dashboard.route.js";
 import { swaggerSpec } from "./swagger.js";
 
 const swaggerDocument = JSON.parse(fs.readFileSync(new URL('../swagger.json', import.meta.url), 'utf8'));
@@ -45,6 +46,7 @@ app.use('/api/hospitals', hospitalRoutes);
 app.use('/api/patients', patientRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/inventories", inventoryRoutes);
+app.use("/api", dashboardRoutes);
 
 // Swagger docs (merged: existing swagger.json + inventory spec)
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(combinedSwaggerSpec));

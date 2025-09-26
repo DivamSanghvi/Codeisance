@@ -1,4 +1,5 @@
 import swaggerJSDoc from "swagger-jsdoc";
+import { dashboardSwaggerSpec } from "./swagger.dashboard.js";
 
 const swaggerDefinition = {
   openapi: "3.0.0",
@@ -13,34 +14,23 @@ const swaggerDefinition = {
       description: "Local server",
     },
   ],
-  components: {
-    schemas: {
-      InventoryItemInput: {
-        type: "object",
-        properties: {
-          type: { type: "string", enum: ["BLOOD", "ORGAN"] },
-          bloodType: { type: "string", enum: ["A+","A-","B+","B-","AB+","AB-","O+","O-"] },
-          organType: { type: "string", enum: ["Kidney","Liver","Heart","Lungs","Pancreas","Cornea","Bone Marrow","Other"] },
-          quantity: { type: "integer", minimum: 1 },
-          donatedBy: { type: "string" },
-          patient: { type: "string" },
-          receivedAt: { type: "string", format: "date-time" },
-          expiresAt: { type: "string", format: "date-time" },
-        },
-        required: ["type", "quantity", "expiresAt"],
-      },
-    },
-  },
+  tags: [
+    { name: "Hospital", description: "Hospital API" },
+    { name: "Inventory", description: "Inventory API" },
+    { name: "Dashboard", description: "Dashboard API" }
+  ],
   paths: {
     
     "/api/inventories/{inventoryId}": {
       get: {
         summary: "Get inventory by id",
+        tags: ["Inventory"],
         parameters: [{ name: "inventoryId", in: "path", required: true, schema: { type: "string" } }],
         responses: { "200": { description: "OK" }, "404": { description: "Not found" } },
       },
       delete: {
         summary: "Delete inventory",
+        tags: ["Inventory"],
         parameters: [{ name: "inventoryId", in: "path", required: true, schema: { type: "string" } }],
         responses: { "200": { description: "Deleted" }, "404": { description: "Not found" } },
       },
@@ -48,6 +38,7 @@ const swaggerDefinition = {
     "/api/inventories/{inventoryId}/items": {
       post: {
         summary: "Add items to inventory (single or bulk)",
+        tags: ["Inventory"],
         parameters: [{ name: "inventoryId", in: "path", required: true, schema: { type: "string" } }],
         requestBody: {
           required: true,
@@ -58,11 +49,50 @@ const swaggerDefinition = {
                 properties: {
                   items: {
                     type: "array",
-                    items: { $ref: "#/components/schemas/InventoryItemInput" },
+                    items: {
+                      type: "object",
+                      properties: {
+                        type: { type: "string", enum: ["BLOOD", "ORGAN"] },
+                        bloodType: { type: "string" },
+                        organType: { type: "string" },
+                        quantity: { type: "integer", minimum: 1 },
+                        donatedBy: { type: "string" },
+                        receivedAt: { type: "string", format: "date-time" },
+                        expiresAt: { type: "string", format: "date-time" }
+                      },
+                      required: ["type", "quantity", "expiresAt"]
+                    },
                   },
                 },
                 required: ["items"],
               },
+              examples: {
+                minimalBlood: {
+                  summary: "Minimal BLOOD item (no patient)",
+                  value: {
+                    items: [
+                      { type: "BLOOD", bloodType: "A+", quantity: 2, expiresAt: "2025-12-31T00:00:00.000Z" }
+                    ]
+                  }
+                },
+                minimalOrgan: {
+                  summary: "Minimal ORGAN item",
+                  value: {
+                    items: [
+                      { type: "ORGAN", organType: "Kidney", quantity: 1, expiresAt: "2025-12-31T00:00:00.000Z" }
+                    ]
+                  }
+                },
+                mixedBulk: {
+                  summary: "Bulk add mixed BLOOD and ORGAN items",
+                  value: {
+                    items: [
+                      { type: "BLOOD", bloodType: "B+", quantity: 3, expiresAt: "2025-11-15T00:00:00.000Z" },
+                      { type: "ORGAN", organType: "Cornea", quantity: 1, donatedBy: "66f4a3b2e5a9a1c123456789", expiresAt: "2025-10-20T00:00:00.000Z" }
+                    ]
+                  }
+                }
+              }
             },
           },
         },
@@ -72,6 +102,7 @@ const swaggerDefinition = {
     "/api/inventories/{inventoryId}/items/{itemId}/use": {
       post: {
         summary: "Use/consume item quantity",
+        tags: ["Inventory"],
         parameters: [
           { name: "inventoryId", in: "path", required: true, schema: { type: "string" } },
           { name: "itemId", in: "path", required: true, schema: { type: "string" } },
@@ -88,6 +119,16 @@ const swaggerDefinition = {
                 },
                 required: ["quantity"],
               },
+              examples: {
+                withoutPatient: {
+                  summary: "Use item without patient",
+                  value: { quantity: 1 }
+                },
+                withPatient: {
+                  summary: "Use item and link to a patient",
+                  value: { quantity: 2, patientId: "66f4a3b2e5a9a1c987654321" }
+                }
+              }
             },
           },
         },
@@ -97,6 +138,7 @@ const swaggerDefinition = {
     "/api/inventories/{inventoryId}/items/{itemId}/discard": {
       post: {
         summary: "Discard item (mark EXPIRED)",
+        tags: ["Inventory"],
         parameters: [
           { name: "inventoryId", in: "path", required: true, schema: { type: "string" } },
           { name: "itemId", in: "path", required: true, schema: { type: "string" } },
@@ -109,6 +151,11 @@ const swaggerDefinition = {
                 type: "object",
                 properties: { reason: { type: "string", enum: ["EXPIRED", "DAMAGED", "OTHER"] } },
               },
+              examples: {
+                expired: { summary: "Expired item", value: { reason: "EXPIRED" } },
+                damaged: { summary: "Damaged item", value: { reason: "DAMAGED" } },
+                other: { summary: "Other reason", value: { reason: "OTHER" } }
+              }
             },
           },
         },
@@ -118,6 +165,7 @@ const swaggerDefinition = {
     "/api/inventories/{inventoryId}/stock": {
       get: {
         summary: "Get aggregated stock status",
+        tags: ["Inventory"],
         parameters: [{ name: "inventoryId", in: "path", required: true, schema: { type: "string" } }],
         responses: { "200": { description: "OK" }, "404": { description: "Not found" } },
       },
@@ -125,8 +173,23 @@ const swaggerDefinition = {
   },
 };
 
+// merge helper
+function deepMerge(target, source) {
+  for (const key of Object.keys(source)) {
+    if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+      if (!target[key]) target[key] = {};
+      deepMerge(target[key], source[key]);
+    } else {
+      target[key] = source[key];
+    }
+  }
+  return target;
+}
+
+const mergedDefinition = deepMerge(JSON.parse(JSON.stringify(swaggerDefinition)), dashboardSwaggerSpec);
+
 export const swaggerSpec = swaggerJSDoc({
-  definition: swaggerDefinition,
+  definition: mergedDefinition,
   apis: [],
 });
 
