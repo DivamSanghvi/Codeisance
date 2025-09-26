@@ -1,18 +1,80 @@
 import React, { useState } from 'react'
 
+const API_BASE = 'http://localhost:8000'
 const bloodTypes = ['A+','A-','B+','B-','AB+','AB-','O+','O-']
 const organs = ['Kidney','Liver','Heart','Lungs','Pancreas','Cornea','Bone Marrow','Other']
 
 export default function Signup() {
   const [tab, setTab] = useState('donor')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault()
+    setLoading(true)
+    setError('')
     const fd = new FormData(e.currentTarget)
     const body = Object.fromEntries(fd.entries())
     body.organDonation = fd.getAll('organDonation')
-    console.log('Signup submit', tab, body)
-    alert('Signup form submitted (UI only).')
+
+    let endpoint, payload
+    if (tab === 'donor') {
+      endpoint = '/api/users/web-register'
+      payload = {
+        name: body.name,
+        phone: body.phone,
+        email: body.email,
+        password: body.password,
+        age: parseInt(body.age),
+        gender: body.gender,
+        bloodType: body.bloodType,
+        organDonation: body.organDonation,
+        anomalies: body.anomalies,
+        pincode: body.pincode
+      }
+    } else {
+      endpoint = '/api/users/hospital/register'
+      payload = {
+        name: body.name,
+        licenseNo: body.licenseNo,
+        password: body.password,
+        address: {
+          line1: body['address.line1'],
+          line2: body['address.line2'],
+          city: body['address.city'],
+          state: body['address.state'],
+          pincode: body['address.pincode'],
+          country: body['address.country']
+        },
+        contact: {
+          phone: body['contact.phone'],
+          email: body['contact.email']
+        },
+        type: body.type,
+        services: body.services ? body.services.split(',').map(s => s.trim()) : []
+      }
+    }
+
+    try {
+      const res = await fetch(`${API_BASE}${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload)
+      })
+      const data = await res.json()
+      if (res.ok) {
+        localStorage.setItem('token', data.token)
+        alert(`${tab} signup successful!`)
+        window.location.href = '#/dashboard'
+      } else {
+        setError(data.message || 'Signup failed')
+      }
+    } catch (err) {
+      setError('Network error')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -32,9 +94,8 @@ export default function Signup() {
           <form className="card form-card" onSubmit={submit}>
             <div className="form-head">
               <h3>Donor Sign up</h3>
-              <p className="muted small">Provide at least one credential: password or PIN</p>
             </div>
-
+            {error && <p className="error">{error}</p>}
             <div className="form-grid">
               <div className="field">
                 <label htmlFor="name">Full name</label>
@@ -45,16 +106,12 @@ export default function Signup() {
                 <input id="phone" name="phone" type="tel" placeholder="Phone number" required />
               </div>
               <div className="field">
-                <label htmlFor="email">Email (optional)</label>
-                <input id="email" name="email" type="email" placeholder="name@example.com" />
+                <label htmlFor="email">Email</label>
+                <input id="email" name="email" type="email" placeholder="name@example.com" required />
               </div>
               <div className="field">
-                <label htmlFor="password">Password (optional)</label>
-                <input id="password" name="password" type="password" placeholder="Create a password" />
-              </div>
-              <div className="field">
-                <label htmlFor="pin">PIN (optional)</label>
-                <input id="pin" name="pin" type="number" min="1000" max="999999" placeholder="4-6 digit PIN" />
+                <label htmlFor="password">Password</label>
+                <input id="password" name="password" type="password" placeholder="Create a password" required />
               </div>
               <div className="field">
                 <label htmlFor="age">Age</label>
@@ -95,9 +152,8 @@ export default function Signup() {
                 <input id="pincode" name="pincode" type="text" placeholder="Area pincode" required />
               </div>
             </div>
-
             <div className="action-row">
-              <button className="btn btn-pill" type="submit">Create account</button>
+              <button className="btn btn-pill" type="submit" disabled={loading}>{loading ? 'Creating account...' : 'Create account'}</button>
               <a className="btn btn-text" href="#/login">Already have an account?</a>
             </div>
           </form>
@@ -108,7 +164,7 @@ export default function Signup() {
             <div className="form-head">
               <h3>Hospital Sign up</h3>
             </div>
-
+            {error && <p className="error">{error}</p>}
             <div className="form-grid">
               <div className="field">
                 <label htmlFor="hname">Hospital name</label>
@@ -125,6 +181,10 @@ export default function Signup() {
               <div className="field">
                 <label htmlFor="licenseNo">License number</label>
                 <input id="licenseNo" name="licenseNo" type="text" placeholder="License number" required />
+              </div>
+              <div className="field">
+                <label htmlFor="password">Password</label>
+                <input id="password" name="password" type="password" placeholder="Create a password" required />
               </div>
               <div className="field">
                 <label htmlFor="hphone">Contact phone</label>
@@ -163,9 +223,8 @@ export default function Signup() {
                 <input id="services" name="services" type="text" placeholder="e.g. blood bank, trauma, dialysis" />
               </div>
             </div>
-
             <div className="action-row">
-              <button className="btn btn-pill" type="submit">Create account</button>
+              <button className="btn btn-pill" type="submit" disabled={loading}>{loading ? 'Creating account...' : 'Create account'}</button>
               <a className="btn btn-text" href="#/login">Already registered?</a>
             </div>
           </form>

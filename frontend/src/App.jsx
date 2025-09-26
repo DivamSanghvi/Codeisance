@@ -66,6 +66,13 @@ function useHashRoute() {
 export default function App() {
   const route = useHashRoute()
 
+  const isAuthenticated = localStorage.getItem('token') !== null;
+
+  const handleSignOut = () => {
+    localStorage.removeItem('token');
+    window.location.href = '#/login';
+  };
+
   useEffect(() => {
     const els = Array.from(document.querySelectorAll('.reveal-on-scroll'))
     const obs = new IntersectionObserver((entries) => {
@@ -108,8 +115,14 @@ export default function App() {
           <a className="nav-link" href="#stats">Stats</a>
         </div>
         <div className="nav-right">
-          <a className="btn btn-text" href="#/login">Login</a>
-          <a className="btn btn-pill" href="#/signup">Sign up</a>
+          {isAuthenticated ? (
+            <button className="btn btn-text" onClick={handleSignOut}>Sign out</button>
+          ) : (
+            <>
+              <a className="btn btn-text" href="#/login">Login</a>
+              <a className="btn btn-pill" href="#/signup">Sign up</a>
+            </>
+          )}
         </div>
       </header>
 
@@ -121,8 +134,14 @@ export default function App() {
                 <h1>PulseLink — Community Blood & Organ Donation Network</h1>
                 <p className="lead">Real-time matching of donors, hospitals, and blood banks using agentic AI. We verify compatibility, location, and urgency, monitor live inventory, and trigger SOS outreach with optimal routes — autonomously.</p>
                 <div className="hero-cta">
-                  <a className="btn btn-pill btn-hover" href="#/signup">Get started</a>
-                  <a className="btn btn-outline btn-hover" href="#/login">Login</a>
+                  {isAuthenticated ? (
+                    <button className="btn btn-pill btn-hover" onClick={handleSignOut}>Sign out</button>
+                  ) : (
+                    <>
+                      <a className="btn btn-pill btn-hover" href="#/signup">Get started</a>
+                      <a className="btn btn-outline btn-hover" href="#/login">Login</a>
+                    </>
+                  )}
                 </div>
                 <div className="hero-glass glass"></div>
                 <div className="stats-row">
